@@ -2,11 +2,16 @@ var passport = require('passport');
 var LocalStrategy = require('passport-local').Strategy;
 var User = require('./models/user');
 
+const bodyParser = require('body-parser');
+const mongoose = require('mongoose');
+const Dishes = require('./models/dishes');
+
 var JwtStrategy = require('passport-jwt').Strategy;
 var ExtractJwt = require('passport-jwt').ExtractJwt;
 var jwt = require('jsonwebtoken'); // used to create, sign, and verify tokens
 
 var config = require('./config');
+const user = require('./models/user');
 
 exports.local = passport.use(new LocalStrategy(User.authenticate()));
 passport.serializeUser(User.serializeUser());
@@ -38,4 +43,59 @@ exports.jwtPassport = passport.use(new JwtStrategy(opts,
         });
     }));
 
-exports.verifyUser = passport.authenticate('jwt', {session: false});
+exports.verifyOrdinaryUser = passport.authenticate('jwt', {session: false});
+
+/*
+exports.verifyUser = function (req, res, next) {
+    var token = req.body.token || req.query.token || req.headers['x-access-token'];
+    if (token) {
+        jwt.verify(token, config.secretKey, function (err, decoded) {
+            if (err) {
+                var err = new Error('You are not authenticated!');
+                err.status = 401;
+                return next(err);
+            } else {
+                req.decoded = decoded;
+                next();
+            }
+        });
+    } else {
+        var err = new Error('No token provided!');
+        err.status = 403;
+        return next(err);
+    }
+};
+
+*/
+
+exports.verifyAdmin = function (req, res, next) {
+    if (req.user.admin) {
+        next();
+    } else {
+        var err = new Error('You are not authorized to perform this operation!');
+        err.status = 403;
+        return next(err);
+    }
+}
+
+
+exports.verifyUser = function (req, res, next)  {
+    Dishes.findById(req.params.dishId)
+    .populate('comments.author')    
+    .then((dish) => {
+        if (dish != null && dish.comments.author._id(req.user._id)) {
+            return next();
+        }
+        else if (dish == null) {
+            err = new Error('Dish ' + req.params.dishId + ' not found');
+            err.status = 404;
+            return next(err);
+        }
+        else {
+            err = new Error('Comment ' + req.params.commentId + ' not found');
+            err.status = 404;
+            return next(err);            
+        }
+    }, (err) => next(err))
+    .catch((err) => next(err));
+}
