@@ -1,7 +1,10 @@
-const mongoose = require('mongoose');
-const Schema = mongoose.Schema;
+var mongoose = require('mongoose');
+var Schema = mongoose.Schema;
+var passportLocalMongoose = require('passport-local-mongoose');
+
 require('mongoose-currency').loadType(mongoose);
 const Currency = mongoose.Types.Currency;
+
 
 var commentSchema = new Schema({
     rating:  {
@@ -57,6 +60,8 @@ const dishSchema = new Schema({
 },{
     timestamps: true
 });
+
+dishSchema.plugin(passportLocalMongoose);
 
 
 var Dishes = mongoose.model('Dish',dishSchema);

@@ -106,7 +106,7 @@ dishRouter.route('/:dishId/comments')
     }, (err) => next(err))
     .catch((err) => next(err));
 })
-.post(cors.corsWithOptions,authenticate.verifyUser,(req, res, next) => {
+.post(cors.corsWithOptions,authenticate.verifyOrdinaryUser,(req, res, next) => {
     Dishes.findById(req.params.dishId)
     .then((dish) => {
         if (dish != null) {
